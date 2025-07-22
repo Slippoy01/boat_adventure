@@ -1,0 +1,5 @@
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/public_html/boat_adventure 
+    - mkdir -p $DEPLOYPATH
+    - /bin/cp -r ./* $DEPLOYPATH/
