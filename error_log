@@ -1,0 +1,24 @@
+[02-Jul-2025 10:31:56 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "PDO" not found in /home/oghawsnu/public_html/boat_adventure/leaderboard.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/oghawsnu/public_html/boat_adventure/leaderboard.php on line 12
+[02-Jul-2025 10:31:58 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "PDO" not found in /home/oghawsnu/public_html/boat_adventure/leaderboard.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/oghawsnu/public_html/boat_adventure/leaderboard.php on line 12
+[02-Jul-2025 10:53:42 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "PDO" not found in /home/oghawsnu/public_html/boat_adventure/leaderboard.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/oghawsnu/public_html/boat_adventure/leaderboard.php on line 12
+[02-Jul-2025 10:55:11 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "PDO" not found in /home/oghawsnu/public_html/boat_adventure/leaderboard.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/oghawsnu/public_html/boat_adventure/leaderboard.php on line 12
+[02-Jul-2025 10:56:06 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "PDO" not found in /home/oghawsnu/public_html/boat_adventure/leaderboard.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/oghawsnu/public_html/boat_adventure/leaderboard.php on line 12
+[02-Jul-2025 10:56:09 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "PDO" not found in /home/oghawsnu/public_html/boat_adventure/leaderboard.php:18
+Stack trace:
+#0 {main}
+  thrown in /home/oghawsnu/public_html/boat_adventure/leaderboard.php on line 18

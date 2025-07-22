@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Boat Adventure Game</title>
+<link rel="icon" type="image/jpg" href="favicon.jpg">
+  
+
+
+
+<style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #000;
+    }
+
+    canvas {
+      display: block;
+      background: url('water.gif') repeat;
+      background-size: cover;
+    }
+
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #fff;
+      display: none;
+    }
+
+    #level {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #fff;
+      display: none;
+    }
+
+    #game-over {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 40px;
+      font-weight: bold;
+      color: red;
+      display: none;
+    }
+
+    #leaderboardyeuh {
+      position: absolute;
+      top: 90%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 18px;
+      text-align: center;
+      max-width: 80%;
+      /* Maksimum lebar tombol */
+      line-height: 1.5;
+      border: 2px solid white;
+      /* Border putih */
+      border-radius: 5px;
+      /* Membuat sudut melengkung */
+      font-weight: bold;
+    }
+
+    #leaderboardyeuh a {
+      text-decoration: none;
+      /* Menghilangkan underline */
+      color: white;
+      /* Warna teks putih */
+      display: inline-block;
+      /* Membuat elemen seperti tombol */
+      padding: 10px 40px;
+      /* Jarak di dalam tombol, horizontal lebih besar */
+      white-space: nowrap;
+      /* Mencegah teks membungkus ke baris baru */
+    }
+
+    #leaderboardyeuh a:hover {
+      cursor: pointer;
+      /* Ubah pointer jadi tangan */
+    }
+
+    #start-button {
+      position: absolute;
+      top: 26%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+    }
+
+    #instructions {
+      position: absolute;
+      top: 55%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 18px;
+      color: white;
+      text-align: center;
+      max-width: 80%;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="loading-container"
+    style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); z-index: 9999; display: flex; justify-content: center; align-items: center;">
+    <div style="text-align: center; color: white;">
+      <p id="loading-text">Loading... 0%</p>
+      <div style="width: 300px; height: 20px; background-color: #444; border-radius: 10px; overflow: hidden;">
+        <div id="loading-bar" style="width: 0%; height: 100%; background-color: #4caf50;"></div>
+      </div>
+    </div>
+  </div>
+
+  <button id="toggleSoundButton" style="
+    position: absolute;
+    top: 30px;
+    right: 5px;
+    font-size: 25px;
+    opacity: 0.7;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    z-index: 1000;
+  ">
+    🔊
+  </button>
+
+  <div id="score">Score: 0</div>
+  <div id="level">Level: 1</div>
+  <div id="game-over">Game Over!</div>
+  <div id="leaderboardyeuh">
+    <a href="leaderboard.html">See Leaderboard</a>
+  </div>
+  <img id="start-button" src="play-button.png" alt="Start Button" />
+  <div id="instructions">
+
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+  <script>
+    const assets = [
+      'boat.png',
+      'treasure.png',
+      'rock.png',
+      'enemy-boat.gif',
+      'projectile.gif',
+      'enemy-boat_destroyed.gif',
+      'boat_destroyed.gif',
+      'water.gif',
+      'canon.png',
+      'bos1.gif',
+      'bos2.gif',
+      'bos3.gif',
+      'projectile1.gif',
+    ];
+
+    // Fungsi untuk memuat satu aset
+    function loadAsset(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = src;
+        img.onload = () => resolve(src);
+        img.onerror = () => reject(`Failed to load ${src}`);
+      });
+    }
+
+    // Fungsi untuk memuat semua aset
+    async function loadAssets(assetList) {
+      const loadingText = document.getElementById('loading-text');
+      const loadingBar = document.getElementById('loading-bar');
+      for (let i = 0; i < assetList.length; i++) {
+        try {
+          await loadAsset(assetList[i]);
+          const percentage = Math.round(((i + 1) / assetList.length) * 100);
+          loadingText.textContent = `Loading... ${percentage}%`;
+          loadingBar.style.width = `${percentage}%`;
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      // Sembunyikan indikator loading setelah selesai
+      document.getElementById('loading-container').style.display = 'none';
+    }
+
+    // Panggil fungsi untuk memulai proses loading
+    loadAssets(assets);
+  </script>
+  <script type="module">
+    import {
+      enemies,
+      projectiles,
+      generateEnemies,
+      drawEnemies,
+      updateEnemies,
+      drawProjectiles,
+      updateProjectiles,
+      checkEnemyCollisions,
+
+    } from './enemy.js';
+
+    import SoundEffect from './soundEffect.js';
+    import AnalogController from './analogController.js';
+    import { handleBoatDestroyed, handleEnemyDestroyed } from './destroyHandler.js';
+    import { spawnBoss, drawBoss, updateBoss, checkBossCollisions, bossAttack, bossProjectiles, updateBossProjectiles, updateBossHealthBar, } from './boss.js';
+
+    import {
+      handleGameOver,
+      fetchLeaderboard,
+      sendScoreToServer,
+      logLeaderboard,
+    } from './gameOver.js';
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreElement = document.getElementById('score');
+    const levelElement = document.getElementById('level');
+    const gameOverElement = document.getElementById('game-over');
+    const startButton = document.getElementById('start-button');
+    const instructions = document.getElementById('instructions');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const soundEffect = new SoundEffect();
+
+    const destroySound = new Audio('sounds/hancur.mp3');
+
+    const toggleSoundButton = document.getElementById("toggleSoundButton");
+    toggleSoundButton.addEventListener("click", toggleSound);
+
+    function toggleSound() {
+      if (soundEffect.isPlaying) {
+        soundEffect.stopBackgroundSound();
+        toggleSoundButton.textContent = "🔇"; // Ikon off
+      } else {
+        soundEffect.playBackgroundSound();
+        toggleSoundButton.textContent = "🔊"; // Ikon on
+      }
+    }
+
+    const boatImage = new Image();
+    boatImage.src = 'boat.png'; // Path gambar perahu
+    const treasureImage = new Image();
+    treasureImage.src = 'treasure.png'; // Path gambar harta karun
+    const rockImage = new Image();
+    rockImage.src = 'rock.png'; // Path gambar batu
+
+    let score = 0;
+    let level = 4;
+    let treasures = [];
+    let rocks = [];
+    let currentBoss = null;
+    let gameOver = false;
+    let gameStarted = false;
+
+    const boat = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      angle: 0,
+      speed: 0.7,
+      size: 60,
+    };
+
+    const analogController = new AnalogController(canvas, boat);
+    // Akses proyektil
+    const playerProjectiles = analogController.getPlayerProjectiles();
+
+    // Mencegah scrolling saat layar disentuh
+    document.addEventListener('touchmove', function (e) {
+      e.preventDefault();
+    }, { passive: false });
+
+
+
+    function generateObjects() {
+      treasures = [];
+      rocks = [];
+      const minDistance = 150;
+      const safeDistance = 100;
+
+      function isTooClose(x1, y1, x2, y2, minDist) {
+        return Math.hypot(x1 - x2, y1 - y2) < minDist;
+      }
+
+      const maxLevelObjects = Math.min(level, 4);
+      for (let i = 0; i < Math.min(5 + maxLevelObjects, 20); i++) {
+        let attempts = 0, x, y, validPosition;
+        do {
+          x = Math.random() * canvas.width;
+          y = Math.random() * canvas.height;
+          validPosition = !isTooClose(x, y, boat.x, boat.y, minDistance) &&
+            treasures.every((treasure) => !isTooClose(x, y, treasure.x, treasure.y, safeDistance));
+          attempts++;
+        } while (!validPosition && attempts < 1000);
+        if (attempts >= 1000) break;
+        treasures.push({ x, y, size: 40 });
+      }
+
+      for (let i = 0; i < Math.min(5 + maxLevelObjects * 2, 40); i++) {
+        let attempts = 0, x, y, validPosition;
+        do {
+          x = Math.random() * canvas.width;
+          y = Math.random() * canvas.height;
+          validPosition = !isTooClose(x, y, boat.x, boat.y, minDistance) &&
+            rocks.every((rock) => !isTooClose(x, y, rock.x, rock.y, safeDistance)) &&
+            treasures.every((treasure) => !isTooClose(x, y, treasure.x, treasure.y, safeDistance));
+          attempts++;
+        } while (!validPosition && attempts < 1000);
+        if (attempts >= 1000) break;
+        rocks.push({ x, y, size: 50 });
+      }
+    }
+
+    function drawBoat() {
+      ctx.save();
+      ctx.translate(boat.x, boat.y);
+      ctx.rotate(boat.angle);
+      ctx.drawImage(boatImage, -boat.size / 2, -boat.size / 2, boat.size, boat.size);
+      ctx.restore();
+    }
+
+    function drawTreasures() {
+      treasures.forEach((treasure) => {
+        ctx.drawImage(
+          treasureImage,
+          treasure.x - treasure.size / 2,
+          treasure.y - treasure.size / 2,
+          treasure.size,
+          treasure.size
+        );
+      });
+    }
+
+    function drawRocks() {
+      rocks.forEach((rock) => {
+        ctx.drawImage(
+          rockImage,
+          rock.x - rock.size / 2,
+          rock.y - rock.size / 2,
+          rock.size,
+          rock.size
+        );
+      });
+    }
+
+    function updateBoat() {
+      boat.x += Math.cos(boat.angle) * boat.speed;
+      boat.y += Math.sin(boat.angle) * boat.speed;
+
+      if (boat.x < 0) boat.x = canvas.width;
+      if (boat.x > canvas.width) boat.x = 0;
+      if (boat.y < 0) boat.y = canvas.height;
+      if (boat.y > canvas.height) boat.y = 0;
+    }
+
+    function checkCollisions() {
+      treasures = treasures.filter((treasure) => {
+        const dist = Math.hypot(boat.x - treasure.x, boat.y - treasure.y);
+        if (dist < (boat.size + treasure.size) / 2) {
+          updateScore(1);
+          return false;
+        }
+        return true;
+      });
+
+      rocks.forEach((rock) => {
+        const dist = Math.hypot(boat.x - rock.x, boat.y - rock.y);
+        if (dist < (boat.size * 0.6 + rock.size * 0.5) / 2) {
+          if (!gameOver) {
+            gameOver = true; // Tandai permainan selesai
+            destroySound.play();
+            handleBoatDestroyed(boat, document.body);
+            alert('You hit the rock! Game over!');
+
+            // Tampilkan alert terlebih dahulu, lalu eksekusi handleGameOver setelah alert selesai
+            setTimeout(() => {
+              handleGameOver(score); 
+            }, 0); // Timeout 0 memastikan eksekusi setelah alert ditutup
+            
+          }
+        }
+      });
+
+      if (treasures.length === 0) {
+        nextLevel();
+      }
+    }
+
+    function updateScore(amount) {
+      score += amount;
+      scoreElement.innerText = `Score: ${score}`;
+    }
+
+    function nextLevel() {
+      level += 1;
+      levelElement.innerText = `Level: ${level}`;
+      generateObjects();
+      generateEnemies(canvas.width, canvas.height, boat);
+
+      if (level % 5 === 0) {
+        currentBoss = spawnBoss(level, canvas.width, canvas.height);
+        if (!currentBoss) {
+          console.error(`Failed to spawn boss for level ${level}`);
+        }
+      }
+    }
+
+    function startGame() {
+      soundEffect.playBackgroundSound();
+      gameStarted = true;
+
+      // Sembunyikan tombol start
+      startButton.style.display = 'none';
+
+      // Sembunyikan instruksi
+      instructions.style.display = 'none';
+
+      // Sembunyikan tombol leaderboard
+      const leaderboardButton = document.getElementById('leaderboardyeuh');
+      if (leaderboardButton) {
+        leaderboardButton.style.display = 'none';
+      }
+
+      // Tampilkan elemen skor dan level
+      scoreElement.style.display = 'block';
+      levelElement.style.display = 'block';
+
+      // Inisialisasi objek game
+      generateObjects();
+      generateEnemies(canvas.width, canvas.height, boat);
+
+      // Mulai loop game
+      gameLoop();
+    }
+    
+    function setInstructionsByDevice() {
+  const instructions = document.getElementById('instructions');
+  const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+  if (isMobile) {
+    instructions.innerHTML = `
+      <p>
+        <strong>Game Instructions:</strong><br>
+        Collect all the treasure.<br>
+        Use the joystick on the left to steer the boat.<br>
+        Tap the button on the right to adjust speed.<br>
+        Crash into or shoot enemies to defeat them!
+      </p>
+    `;
+  } else {
+    instructions.innerHTML = `
+      <p>
+        <strong>Game Instructions:</strong><br>
+        Use <kbd>Arrow Keys</kbd> to control direction.<br>
+        Press <kbd>Arrow Up</kbd> to accelerate.<br>
+        Press <kbd>Arrow Down</kbd> to decelerate.<br>
+        Press <kbd>Spacebar</kbd> to shoot.<br>
+        Collect all the treasure.<br>
+        Crash into or shoot enemies to defeat them!
+      </p>
+    `;
+  }
+}
+
+// Panggil saat halaman dimuat
+setInstructionsByDevice();
+
+
+    startButton.addEventListener('click', startGame);
+
+    function gameLoop() {
+      if (gameOver) return;
+
+      // Bersihkan canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Logika pemain
+      updateBoat();
+
+      // Logika musuh
+      updateEnemies(canvas.width, canvas.height, boat);
+      updateProjectiles(canvas.width, canvas.height);
+      checkCollisions();
+      checkEnemyCollisions(boat, updateScore, playerProjectiles);
+
+      // Logika proyektil musuh
+      projectiles.forEach((projectile, projectileIndex) => {
+        const distToBoat = Math.hypot(projectile.x - boat.x, projectile.y - boat.y);
+        if (distToBoat < boat.size / 2) {
+          console.log(`Boat hit by projectile at (${projectile.x}, ${projectile.y}).`);
+          if (!gameOver) {
+            gameOver = true; // Tandai permainan selesai
+            destroySound.play();
+            handleBoatDestroyed(boat, document.body); // Efek animasi penghancuran perahu
+            alert("You've been shot! Game Over!");
+
+            // Tampilkan alert terlebih dahulu, lalu eksekusi handleGameOver setelah alert selesai
+            setTimeout(() => {
+
+              handleGameOver(score); // Panggil fungsi setelah pengguna menekan OK
+            }, 0); // Timeout 0 memastikan eksekusi setelah alert ditutup
+          }
+
+          // Hapus proyektil dari array
+          projectiles.splice(projectileIndex, 1);
+        }
+      });
+
+      // Logika bos
+      if (currentBoss) {
+        updateBoss(currentBoss); // Perbarui posisi bos (jika diperlukan)
+        bossAttack(currentBoss, boat, bossProjectiles); // Bos menyerang
+        updateBossProjectiles(canvas.width, canvas.height); // Perbarui proyektil bos
+
+        // Periksa tabrakan proyektil bos dengan pemain
+        bossProjectiles.forEach((projectile, index) => {
+          const distToPlayer = Math.hypot(projectile.x - boat.x, projectile.y - boat.y);
+          if (distToPlayer < boat.size / 2) {
+            // Pemain terkena proyektil
+            if (!gameOver) {
+              gameOver = true; // Tandai permainan selesai
+              destroySound.play();
+              handleBoatDestroyed(boat, document.body); // Efek animasi penghancuran perahu
+              alert("You've been shot! Game Over!");
+
+              // Tampilkan alert terlebih dahulu, lalu eksekusi handleGameOver setelah alert selesai
+              setTimeout(() => {
+
+                handleGameOver(score); // Panggil fungsi setelah pengguna menekan OK
+              }, 0); // Timeout 0 memastikan eksekusi setelah alert ditutup
+            }
+            // Hapus proyektil yang mengenai pemain
+            if (projectile.element) projectile.element.remove();
+            bossProjectiles.splice(index, 1);
+          }
+        });
+
+        // Periksa apakah bos dikalahkan
+        const bossDefeated = checkBossCollisions(playerProjectiles, currentBoss, updateScore);
+        if (bossDefeated) {
+          updateScore(100); // Tambahkan skor untuk mengalahkan bos
+          currentBoss = null; // Hapus bos jika dikalahkan
+        }
+
+        // Perbarui health bar bos
+        updateBossHealthBar(currentBoss);
+      }
+
+      // Gambar elemen permainan
+      drawTreasures();
+      drawRocks();
+      drawBoat();
+      drawEnemies(ctx);
+      drawProjectiles(ctx);
+
+      // Gambar bos jika ada
+      if (currentBoss) {
+        drawBoss(ctx, currentBoss); // Gambar bos
+      }
+
+      // Kontrol analog
+      analogController.draw(ctx);
+      analogController.updateKeyboardControl();
+
+      // Lanjutkan game loop
+      requestAnimationFrame(gameLoop);
+    }
+
+  </script>
+
+</body>
+
+</html>
