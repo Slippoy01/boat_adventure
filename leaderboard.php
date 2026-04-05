@@ -10,9 +10,9 @@ header('Access-Control-Allow-Headers: Content-Type');
 header('Content-Type: application/json');
 
 $host = 'localhost';
-$dbname = 'oghawsnu_boat';
-$username = 'oghawsnu_boat';
-$password = 'E2m2i1r1#';
+$dbname = 'btsbmuww_scores';
+$username = 'btsbmuww_scores';
+$password = 'E2m2i1r1###';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);

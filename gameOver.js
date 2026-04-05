@@ -1,7 +1,7 @@
 //Fungsi untuk mendapatkan leaderboard dari server
 export async function fetchLeaderboard() {
   try {
-    const response = await fetch('https://codemir.my.id/boat_adventure/leaderboard');
+    const response = await fetch('https://codemir.my.id/boat_adventure/leaderboard.php');
     const leaderboard = await response.json();
     return leaderboard; // Kembalikan leaderboard dalam bentuk JSON
   } catch (error) {
@@ -13,7 +13,7 @@ export async function fetchLeaderboard() {
 // Fungsi untuk menambahkan skor ke leaderboard
 export async function sendScoreToServer(name, score) {
   try {
-    const response = await fetch('https://codemir.my.id/boat_adventure/leaderboard', {
+    const response = await fetch('https://codemir.my.id/boat_adventure/leaderboard.php', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
